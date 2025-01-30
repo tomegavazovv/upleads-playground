@@ -6,7 +6,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 import os
 import streamlit as st
 
-available_models = ['deepseek-chat', 'gpt-4', 'gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet-20240620']
+available_models = ['deepseek-chat', 'gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet-20240620']
 
 tracer = LangChainTracer(
     project_name="chatbot-upleads"

@@ -83,7 +83,6 @@ def create_streamlit_app():
                 cleaned_prompt = cleaned_prompt.strip('"').encode().decode('unicode_escape')
                 st.session_state.company_prompt = cleaned_prompt
             except Exception as e:
-                print(f"Error parsing stored prompt: {stored_prompt[:100]}...")  # Print first 100 chars for debugging
                 st.session_state.company_prompt = company_info_prompt  # fallback to default prompt
         else:
             st.session_state.company_prompt = company_info_prompt  # fallback to default prompt
@@ -92,7 +91,7 @@ def create_streamlit_app():
     selected_models = st.multiselect(
         "Choose models",
         options=available_models,
-        default=[st.session_state.selected_model]
+        default=available_models
     )
     
     # Update session state to store multiple models
