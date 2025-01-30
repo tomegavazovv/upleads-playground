@@ -4,6 +4,7 @@ from langchain.callbacks.manager import CallbackManager
 from langchain_anthropic import ChatAnthropic
 from langchain_openai.chat_models.base import BaseChatOpenAI
 import os
+import streamlit as st
 
 available_models = ['deepseek-chat', 'gpt-4', 'gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet-20240620']
 
@@ -19,12 +20,13 @@ def get_model(name: str):
     return ChatOpenAI(
       model=name,
       temperature=0,
-      callback_manager=CallbackManager([tracer])
+      callback_manager=CallbackManager([tracer]),
+      api_key=st.secrets["OPENAI_API_KEY"]
     )
   elif 'deepseek' in name:
     return BaseChatOpenAI(
       model=name,
-      openai_api_key=os.getenv('DEEPSEEK_API_KEY'),
+      openai_api_key=st.secrets['DEEPSEEK_API_KEY'],
       openai_api_base="https://api.deepseek.com",
       max_tokens=1024,
       temperature=0,
@@ -37,7 +39,7 @@ def get_model(name: str):
       max_tokens=1024,
       timeout=None,
       max_retries=2,
-      api_key=os.getenv('ANTHROPIC_API_KEY'),
+      api_key=st.secrets['ANTHROPIC_API_KEY'],
       callback_manager=CallbackManager([tracer])
     )
   # if name == 'deepseek':

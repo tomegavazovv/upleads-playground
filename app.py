@@ -495,7 +495,7 @@ async def stream_response(state, config, response_placeholder, abot):
     return response
 
 def main():
-    model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    model = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=st.secrets["OPENAI_API_KEY"])
     abot = Agent(model, [], system=system_prompt, checkpointer=memory)
     st.set_page_config(layout="wide")
 
