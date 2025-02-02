@@ -12,6 +12,7 @@ from langchain_openai import ChatOpenAI
 from utils.get_model import get_model, available_models
 import json
 from streamlit_js import st_js
+from db.db import get_filter_options, get_jobs
 
 
 def create_streamlit_app():
@@ -24,6 +25,10 @@ def create_streamlit_app():
         st.session_state.loaded_jobs = []
     if 'selected_model' not in st.session_state:
         st.session_state.selected_model = 'gpt-4o'
+    if 'filters' not in st.session_state:
+        st.session_state.filters = {}
+    if 'title_filter' not in st.session_state:
+        st.session_state.title_filter = ''
     
     st.markdown("""
         <style>
@@ -98,6 +103,68 @@ def create_streamlit_app():
     if 'selected_models' not in st.session_state:
         st.session_state.selected_models = selected_models
 
+    # Get filter options from API
+    filter_options = get_filter_options()
+
+    # Filter section
+    with st.expander("Filter Jobs"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Title filter
+            st.session_state.title_filter = st.text_input("Job Title", value=st.session_state.title_filter)
+            
+            # Category filter
+            selected_categories = st.multiselect(
+                "Categories",
+                options=filter_options['categories'],
+                default=st.session_state.filters.get('categories', [])
+            )
+            
+            # Location filter
+            selected_locations = st.multiselect(
+                "Locations",
+                options=filter_options['locations'],
+                default=st.session_state.filters.get('locations', [])
+            )
+            
+        with col2:
+            # Project Type filter
+            selected_project_types = st.multiselect(
+                "Project Types",
+                options=filter_options['projectTypes'],
+                default=st.session_state.filters.get('projectTypes', [])
+            )
+            
+            # Payment Type filter
+            selected_payment_types = st.multiselect(
+                "Payment Types",
+                options=filter_options['paymentTypes'],
+                default=st.session_state.filters.get('paymentTypes', [])
+            )
+            
+            # Skills filter
+            selected_skills = st.multiselect(
+                "Skills",
+                options=filter_options['skills'],
+                default=st.session_state.filters.get('skills', [])
+            )
+        
+        # Apply filters button
+        if st.button("Apply Filters"):
+            st.session_state.filters = {
+                'categories': selected_categories,
+                'locations': selected_locations,
+                'projectTypes': selected_project_types,
+                'paymentTypes': selected_payment_types,
+                'skills': selected_skills
+            }
+            if st.session_state.title_filter:
+                st.session_state.filters['title'] = st.session_state.title_filter
+            st.session_state.job_offset = 0  # Reset offset when applying new filters
+            st.session_state.loaded_jobs = get_jobs(offset=0, filters=st.session_state.filters)
+            st.rerun()
+
     col1, col2 = st.columns([1, 1])
     
     
@@ -132,7 +199,7 @@ def create_streamlit_app():
         with st.container(key='jobs-container'):
             
             # Fetch new jobs and append to existing ones
-            new_jobs = get_jobs(offset=st.session_state.job_offset)
+            new_jobs = get_jobs(offset=st.session_state.job_offset, filters=st.session_state.filters)
             if not st.session_state.loaded_jobs or st.session_state.job_offset == 0:
                 st.session_state.loaded_jobs = new_jobs
             
@@ -187,7 +254,7 @@ def create_streamlit_app():
             with st.container(key='load_more_jobs_container'):
               if st.button("Load More Jobs", type="primary", use_container_width=True):
                   st.session_state.job_offset += 10
-                  new_jobs = get_jobs(offset=st.session_state.job_offset)
+                  new_jobs = get_jobs(offset=st.session_state.job_offset, filters=st.session_state.filters)
                   st.session_state.loaded_jobs.extend(new_jobs)
                   st.rerun()
 

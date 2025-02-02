@@ -1,15 +1,10 @@
-beautifulsoup4
-curl_cffi
 langchain
 langchain_anthropic
 langchain_community
 langchain_core
 langchain_openai
 langgraph
-protobuf
 pydantic
 python-dotenv
-streamlit
 langsmith
-google-cloud-firestore
-streamlit_js
+fastapi

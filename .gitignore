@@ -41,3 +41,4 @@ htmlcov/
 .idea/
 
 .streamlit/secrets.toml
+.vercel

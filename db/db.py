@@ -1,49 +1,54 @@
-from google.cloud import firestore
-from google.oauth2 import service_account
-from google.oauth2 import service_account
-from utils.flatten_dict import flatten_dict
-import streamlit as st
+import requests
+from typing import Optional, Dict, List, Any
 
-project_id = st.secrets.get("project_id")
-private_key_id = st.secrets.get("private_key_id")
-private_key = st.secrets.get("private_key")
-client_email = st.secrets.get("client_email")
-client_id = st.secrets.get("client_id")
-auth_uri = st.secrets.get("auth_uri")
-token_uri = st.secrets.get("token_uri")
-auth_provider_x509_cert_url = st.secrets.get("auth_provider_x509_cert_url")
-client_x509_cert_url = st.secrets.get("client_x509_cert_url")
-universe_domain = st.secrets.get("universe_domain")
+API_URL = "http://localhost:3003"
 
-credentials_dict = {
-    "type": "service_account",
-    "project_id": project_id,
-    "private_key_id": private_key_id,
-    "private_key": private_key,
-    "client_email": client_email,
-    "client_id": client_id,
-    "auth_uri": auth_uri,
-    "token_uri": token_uri,
-    "auth_provider_x509_cert_url": auth_provider_x509_cert_url,
-    "client_x509_cert_url": client_x509_cert_url,
-    "universe_domain": universe_domain,
-}
+def get_jobs(limit: int = 10, offset: int = 0, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, str]]:
+    """Fetch jobs from API with pagination and filters"""
+    try:
+        params = {
+            'offset': offset,
+            **(filters or {})
+        }
+        
+        # Convert list filters to multiple query params
+        query_params = []
+        for key, value in params.items():
+            if isinstance(value, list):
+                for item in value:
+                    query_params.append(f"{key}={item}")
+            else:
+                query_params.append(f"{key}={value}")
+        
+        url = f"{API_URL}/jobs/search?{'&'.join(query_params)}"
+        print(url)
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        jobs = response.json()
+        return [{
+            'description': job.get('description', ''),
+            'title': job.get('title', '')
+        } for job in jobs]
+        
+    except Exception as e:
+        st.error(f"Failed to fetch jobs: {str(e)}")
+        raise
 
-try:
-    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-    db = firestore.Client(project=project_id, credentials=credentials)
-except Exception as e:
-    st.error(f"Failed to initialize Firestore client: {str(e)}")
-    raise
-
-
-
-def get_jobs(limit=10, offset=0):
-    """Fetch jobs from Firestore with pagination"""
-    jobs_ref = db.collection('jobs').where('category', '==', 'Web Development').limit(limit).offset(offset)
-    jobs = jobs_ref.get()
-    jobs = [flatten_dict(job.to_dict()) for job in jobs]
-    
-    fields = ['description', 'title']
-    
-    return [{field: job.get(field, '') for field in fields} for job in jobs]
+def get_filter_options() -> Dict[str, List[str]]:
+    """Fetch available filter options from API"""
+    try:
+        response = requests.get(f"{API_URL}/jobs/filter-options")
+        response.raise_for_status()
+        data = response.json()
+        
+        return {
+            'categories': [option['key'] for option in data.get('categories', [])],
+            'locations': [option['key'] for option in data.get('locations', [])],
+            'projectTypes': [option['key'] for option in data.get('projectTypes', [])],
+            'paymentTypes': [option['key'] for option in data.get('paymentTypes', [])],
+            'skills': data.get('skills', [])
+        }
+    except Exception as e:
+        st.error(f"Failed to fetch filter options: {str(e)}")
+        raise
